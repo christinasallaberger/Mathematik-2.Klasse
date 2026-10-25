@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ggT und kgV – mit Primfaktoren</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Fraunces:opsz,wght@9..144,600;9..144,800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F7F9FC; --grid:#DCE6F2; --ink:#1B2F6B; --text:#1E2533; --muted:#5B6578;
+  --card:#FFFFFF; --line:#C9D5E6; --ok:#217A4B; --okbg:#E3F4EA; --bad:#B3261E; --badbg:#FBE7E5;
+  --mark:#FFE873; --field:#FFFFFF; --info:#EAF1FB; --accent:#147D92;
+  color-scheme: light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#111827; --grid:#1C2638; --ink:#A9C1FF; --text:#E6EAF2; --muted:#9AA4B8;
+    --card:#172033; --line:#2C3A55; --ok:#5FD08E; --okbg:#173326; --bad:#FF8A80; --badbg:#3A1C1C;
+    --mark:#6B5A12; --field:#0F1726; --info:#1A2740; --accent:#5CC8DC; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#111827; --grid:#1C2638; --ink:#A9C1FF; --text:#E6EAF2; --muted:#9AA4B8;
+  --card:#172033; --line:#2C3A55; --ok:#5FD08E; --okbg:#173326; --bad:#FF8A80; --badbg:#3A1C1C;
+  --mark:#6B5A12; --field:#0F1726; --info:#1A2740; --accent:#5CC8DC; color-scheme: dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+[hidden]{display:none!important}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  margin:0; color:var(--text); font-family:"Atkinson Hyperlegible",system-ui,"Segoe UI",Arial,sans-serif;
+  font-size:1.0625rem; line-height:1.5;
+  background-color:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;
+}
+.wrap{max-width:60rem;margin:0 auto;padding:1.5rem 1rem 4rem}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:1rem;margin:1rem 0 2rem}
+h1{font-family:Fraunces,Georgia,serif;font-weight:800;color:var(--ink);font-size:clamp(2.1rem,6vw,3.5rem);line-height:1.02;margin:0;letter-spacing:-.01em}
+h1 .acc{color:var(--accent)}
+.sub{color:var(--muted);margin:.5rem 0 0;max-width:42rem}
+.top{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
+.score{font-weight:700;color:var(--ink);background:var(--card);border:2px solid var(--line);border-radius:999px;padding:.35rem .9rem}
+button{font:inherit;cursor:pointer;border-radius:.5rem;border:2px solid var(--ink);background:var(--ink);color:var(--paper);padding:.45rem .9rem;font-weight:700}
+button.ghost{background:transparent;color:var(--ink)}
+button:disabled{cursor:default;opacity:.45}
+button:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--mark);outline-offset:2px}
+button.mini{font-size:.85rem;padding:.1rem .55rem;background:transparent;color:var(--ink);border-width:1.5px}
+section{background:var(--card);border:2px solid var(--line);border-radius:.75rem;padding:1.25rem 1.25rem 1rem;margin:0 0 1.5rem}
+.head{display:flex;gap:.8rem;align-items:baseline;flex-wrap:wrap}
+.num{font-family:Fraunces,Georgia,serif;font-weight:800;font-size:1.6rem;color:var(--ink);min-width:1.4em}
+h2{font-size:1.15rem;margin:0}
+h3{font-size:1.05rem;margin:0 0 .4rem;color:var(--ink)}
+sup{font-size:.68em;margin-left:.04em}
+input{font:inherit;font-size:1.1rem;color:var(--text);background:var(--field);border:2px solid var(--line);border-radius:.4rem;padding:.2rem .4rem}
+input.ok{border-color:var(--ok);background:var(--okbg)}
+input.bad{border-color:var(--bad);background:var(--badbg)}
+.actions{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin-top:.6rem}
+.hint{color:var(--muted);font-size:.95rem;margin:.4rem 0 0}
+.msg{margin:.6rem 0 0;font-size:.97rem;display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
+.msg.ok{color:var(--ok);font-weight:700}.msg.bad{color:var(--bad)}.msg.shown{color:var(--muted)}
+
+details.info{background:var(--info);border:0;border-left:6px solid var(--ink);border-radius:.5rem;padding:.7rem 1rem;margin:0 0 1.5rem}
+details.info summary{cursor:pointer;font-weight:700;color:var(--ink)}
+details.info p{margin:.4rem 0}
+.copy{background:var(--mark);color:var(--text);border-radius:.4rem;padding:.4rem .7rem;margin:.6rem 0!important}
+.rule{font-size:1.1rem}
+.mk{background:var(--mark);border-radius:.3rem;padding:0 .2rem;color:var(--text)}
+
+.nav{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem}
+.dots{display:flex;gap:.35rem;flex-wrap:wrap}
+.dot{min-width:2.3rem;height:2.3rem;border-radius:999px;padding:0 .4rem;font-weight:700;background:var(--field);color:var(--ink);border:2px solid var(--line)}
+.dot.started{background:var(--info)}
+.dot.done{background:var(--okbg);border-color:var(--ok);color:var(--ok)}
+.dot.shown{border-style:dashed}
+.dot.cur{border-color:var(--ink);box-shadow:0 0 0 3px var(--mark)}
+.round{margin-left:auto;color:var(--muted);font-size:.9rem;border:1.5px solid var(--line);border-radius:999px;padding:.1rem .6rem}
+
+.tasktext{font-size:1.15rem;margin:.6rem 0 0}
+.stepcard{border:2px solid var(--line);border-radius:.6rem;padding:.8rem 1rem;margin-top:1rem}
+.stepcard.active{border-color:var(--ink)}
+.stepcard.done{border-color:var(--ok)}
+.stepcard p{margin:.3rem 0}
+.donetxt{color:var(--ok);font-weight:700}
+.row{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin:.45rem 0;font-size:1.2rem}
+.row .n0{min-width:3.2rem;text-align:right;font-weight:700}
+.row input{width:8rem}
+.row input.wide{width:13rem;max-width:100%}
+.ladwrap{display:flex;flex-direction:column;gap:.4rem}
+.ladbox{margin:.6rem 0}
+table.ladin{border-collapse:collapse;min-width:0;width:auto;font-size:1.35rem;color:var(--ink)}
+table.ladin td{border:0;padding:.15rem .7rem;text-align:right;vertical-align:middle}
+table.ladin td+td{border-left:2.5px solid var(--ink);text-align:left}
+table.ladin input{width:4.4rem;text-align:center;font-size:1.2rem}
+.ladbox .rowmsg{padding-left:0;margin:.3rem 0 0}
+.ladhead{font-weight:700;color:var(--ink);font-size:1.15rem}
+.lrow{margin:.2rem 0}
+.row input.small{width:4.2rem;text-align:center}
+.heft .facline{margin:.2rem 0 1rem}
+.sumlad{display:flex;align-items:center;gap:1.2rem;margin:.4rem 0}
+.heft table.lad{border-collapse:collapse;min-width:0;width:auto;margin:.6rem 0 .1rem;font-size:1.25rem;color:var(--ink)}
+.heft table.lad td{border:0;padding:.05rem .6rem;text-align:right}
+.heft table.lad td+td{border-left:2px solid var(--ink);text-align:left}
+.rowmsg{flex-basis:100%;padding-left:.2rem;font-size:.92rem;color:var(--bad)}
+.rowmsg:empty{display:none}
+.chip{font:inherit;font-size:1.2rem;font-weight:400;min-width:2.2rem;background:var(--field);color:var(--text);border:2px dashed var(--line);border-radius:.45rem;padding:.05rem .4rem}
+.chip.mk{background:var(--mark);border:2px solid var(--ink)}
+.chip.kg{background:var(--info);border:2px solid var(--accent);color:var(--ink);font-weight:700}
+.chip:disabled{opacity:1;cursor:default;border-style:solid}
+.sep{color:var(--muted)}
+.opts{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.4rem}
+.opt{font-weight:400;background:var(--field);color:var(--text);border:2px solid var(--line);text-align:left}
+.opt b{color:var(--ink)}
+.donebox{margin-top:1rem;padding:.8rem 1rem;border-radius:.6rem;background:var(--okbg);border:2px solid var(--ok);display:flex;gap:.8rem;flex-wrap:wrap;align-items:center}
+.donebox b{color:var(--ok)}
+
+.heft{overflow-x:auto;margin:1.2rem 0 .5rem;border:2px dashed var(--line);border-radius:.6rem;background:var(--paper);padding:.8rem 1rem}
+.heft .hefttitle{margin:0 0 .3rem;font-weight:700;color:var(--muted);font-size:.95rem}
+.heft div{font-size:1.3rem;color:var(--ink);margin:.15rem 0}
+.heft .small{font-size:1rem;color:var(--muted)}
+.heft .fin{font-weight:700}
+.heft .copy{font-size:1rem}
+
+.startcard{border-color:var(--ink);border-width:3px}
+.startcard h2{font-family:Fraunces,Georgia,serif;font-size:1.5rem;color:var(--ink)}
+#pname{width:16rem;max-width:100%;font-size:1.15rem}
+#startDone{display:flex;align-items:center;gap:.8rem;flex-wrap:wrap}
+.who{font-weight:700;color:var(--ink);display:inline-flex;align-items:center;gap:.4rem;font-size:1.1rem}
+#codeAsk{margin-top:1rem}
+#codeAsk summary{cursor:pointer;color:var(--ink);font-weight:700}
+#pcode{width:17rem;max-width:100%;font-family:ui-monospace,Consolas,"Courier New",monospace;text-transform:uppercase;letter-spacing:.05em}
+#pnameErr{color:var(--bad);margin:.6rem 0 0}
+#startMsg{flex-basis:100%;margin:0;color:var(--ok);font-weight:700}
+#startMsg:empty{display:none}
+#codeBox{flex-basis:100%;background:var(--info);border-left:6px solid var(--ink);border-radius:.5rem;padding:.7rem 1rem}
+#codeBox p{margin:.3rem 0}
+.code{font-family:ui-monospace,Consolas,"Courier New",monospace;font-size:1.35rem;font-weight:700;letter-spacing:.06em;color:var(--ink);word-break:break-all}
+.finish{display:flex;justify-content:center;margin:0 0 1.5rem}
+#summary{border-color:var(--ink);border-width:3px}
+#summary .who{margin:.4rem 0 0;color:var(--muted)}
+#summary .who b{color:var(--text)}
+.summsg{font-size:1.2rem;font-weight:700;color:var(--ink);margin:.6rem 0 1rem}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:30rem}
+th,td{text-align:left;padding:.4rem .6rem;border-bottom:1px solid var(--line)}
+td.c,th.c{text-align:center}
+tfoot td{font-weight:700;border-bottom:0;border-top:2px solid var(--ink)}
+body.locked #main{opacity:.35;filter:grayscale(.4);pointer-events:none;user-select:none}
+
+#pad{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--card);border-top:3px solid var(--ink);
+  padding:.5rem .6rem calc(.5rem + env(safe-area-inset-bottom,0px));box-shadow:0 -4px 16px rgba(27,47,107,.15)}
+#pad .padtop{display:flex;align-items:center;gap:.5rem;max-width:28rem;margin:0 auto .4rem;color:var(--muted);font-size:.9rem}
+#pad .padtop span{margin-right:auto;font-weight:700;color:var(--ink)}
+#pad .keys{display:grid;grid-template-columns:repeat(5,1fr);gap:.3rem;max-width:28rem;margin:0 auto}
+#pad .keys button{padding:.55rem 0;font-size:1.2rem;font-weight:700;background:var(--field);color:var(--text);border:2px solid var(--line);border-radius:.45rem;touch-action:manipulation}
+#pad .keys button.op{background:var(--info)}
+#pad .keys button.go{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+body.padon .wrap{padding-bottom:20rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1><span class="acc">ggT</span> und <span class="acc">kgV</span></h1>
+      <p class="sub">Größter gemeinsamer Teiler und kleinstes gemeinsames Vielfaches – mit Primfaktoren, Schritt für Schritt. Mit ◀ ▶ oder den Nummern springst du zwischen den Beispielen.</p>
+    </div>
+    <div class="top"><span class="score" id="score">0 von 8 fertig</span></div>
+  </header>
+
+  <section id="start" class="startcard">
+    <div id="startAsk">
+      <h2>Wie heißt du?</h2>
+      <p class="hint">Gib zuerst deinen Namen ein. Er steht am Ende in deiner Auswertung und kann danach nicht mehr geändert werden. Hast du auf diesem Gerät schon geübt, machst du automatisch dort weiter, wo du aufgehört hast.</p>
+      <div class="actions"><input id="pname" placeholder="Vor- und Nachname" autocomplete="name" aria-label="Dein Name"><button id="startBtn" type="button">Los geht’s</button></div>
+      <details id="codeAsk">
+        <summary>Auf einem anderen Gerät angefangen? Code eingeben</summary>
+        <p class="hint">Schreib oben deinen Namen genau wie auf dem anderen Gerät und tippe hier den Code ein.</p>
+        <div class="actions"><input id="pcode" placeholder="z. B. K7MP-2XQ9" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Code vom anderen Gerät"></div>
+      </details>
+      <p id="pnameErr" hidden></p>
+    </div>
+    <div id="startDone" hidden>
+      <span class="who">👤 <b id="pnameShow"></b></span>
+      <button type="button" class="mini" id="codeBtn" aria-expanded="false">Auf anderem Gerät weitermachen</button>
+      <p id="startMsg" aria-live="polite"></p>
+      <div id="codeBox" hidden>
+        <p>Dein Code: <span class="code" id="codeShow"></span> <button type="button" class="mini" id="codeCopy">Kopieren</button></p>
+        <p class="hint">Öffne die Übung auf dem anderen Gerät, gib <b>genau denselben Namen</b> ein und tippe diesen Code ein. Der Code ändert sich, während du weiterarbeitest – schreib ihn dir erst auf, wenn du hier aufhörst.</p>
+      </div>
+    </div>
+  </section>
+
+  <div id="main">
+    <section id="exCard"></section>
+
+    <details class="info" id="howto" open>
+      <summary>Zusammenfassung – schreib sie in dein Heft!</summary>
+      <p class="copy">✏️ <b>Schreib diese Zusammenfassung mit dem Beispiel ordentlich in dein Heft ab.</b></p>
+      <p><b>ggT</b> = größter gemeinsamer Teiler: die größte Zahl, durch die <b>alle</b> Zahlen teilbar sind.<br>
+         <b>kgV</b> = kleinstes gemeinsames Vielfaches: die kleinste Zahl, die durch <b>alle</b> Zahlen teilbar ist.</p>
+      <p><b>1.</b> Zerlege jede Zahl in Primfaktoren: Teile Schritt für Schritt durch die kleinste passende Primzahl (2, 3, 5, 7, 11 …), bis links 1 steht.</p>
+      <div class="sumlad"><table class="ladin"><tbody><tr><td>24</td><td>2</td></tr><tr><td>12</td><td>2</td></tr><tr><td>6</td><td>2</td></tr><tr><td>3</td><td>3</td></tr><tr><td>1</td><td></td></tr></tbody></table><span class="rule">→ 24 = 2 · 2 · 2 · 3</span></div>
+      <p class="rule">24 = <span class="mk">2</span> · <span class="mk">2</span> · 2 · <span class="mk">3</span> &nbsp;&nbsp;&nbsp; 36 = <span class="mk">2</span> · <span class="mk">2</span> · <span class="mk">3</span> · 3</p>
+      <p><b>2. ggT:</b> Nimm nur die Faktoren, die in <b>allen</b> Zahlen vorkommen (gelb), und multipliziere sie.<br>
+         <span class="rule">ggT(24, 36) = 2 · 2 · 3 = <b>12</b></span></p>
+      <p><b>3. kgV:</b> Nimm <b>jeden</b> Primfaktor so oft, wie er in einer der Zahlen <b>höchstens</b> vorkommt.<br>
+         <span class="rule">kgV(24, 36) = 2 · 2 · 2 · 3 · 3 = <b>72</b></span> &nbsp;(die 2 dreimal wie bei 24, die 3 zweimal wie bei 36)</p>
+      <p><b>Kontrolle bei zwei Zahlen:</b> ggT · kgV = erste Zahl · zweite Zahl → 12 · 72 = 864 = 24 · 36 ✓</p>
+      <p><b>Textaufgaben:</b> Wird etwas in möglichst große gleiche Teile <b>aufgeteilt</b> → <b>ggT</b> (Ergebnis ist kleiner als die Zahlen).<br>
+         Passiert etwas <b>wieder gleichzeitig</b> → <b>kgV</b> (Ergebnis ist größer als die Zahlen).</p>
+      <p class="hint">Eingabe beim kgV: Primfaktoren mit Malpunkt, z. B. 2·2·3 oder 2^2·3.</p>
+    </details>
+
+    <div class="finish"><button class="ghost" id="showSum" type="button">Auswertung anzeigen</button></div>
+
+    <section id="summary" hidden>
+      <div class="head"><h2 id="sumTitle">Auswertung</h2></div>
+      <p id="sumWho" class="who"></p>
+      <p id="sumMsg" class="summsg"></p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Beispiel</th><th>Ergebnis</th><th>Bewertung</th><th class="c">Fehlversuche</th></tr></thead>
+        <tbody id="sumBody"></tbody>
+        <tfoot id="sumFoot"></tfoot>
+      </table></div>
+      <div class="actions" style="margin-top:1rem"><button type="button" id="newRound2">Neue Runde mit neuen Zahlen</button></div>
+    </section>
+  </div>
+</div>
+
+<div id="pad" hidden role="group" aria-label="Eingabehilfe">
+  <div class="padtop"><span>Eingabehilfe</span>
+    <button type="button" class="mini" id="padSys">Handy-Tastatur einblenden</button>
+    <button type="button" class="mini" id="padHide" aria-label="Eingabehilfe schließen">✕</button>
+  </div>
+  <div class="keys">
+    <button type="button" data-ins="7">7</button><button type="button" data-ins="8">8</button><button type="button" data-ins="9">9</button><button type="button" class="op" data-ins="·" aria-label="mal">·</button><button type="button" class="op" data-act="del" aria-label="Löschen">⌫</button>
+    <button type="button" data-ins="4">4</button><button type="button" data-ins="5">5</button><button type="button" data-ins="6">6</button><button type="button" class="op" data-ins="^" aria-label="hoch">^</button><button type="button" class="op" data-act="clr" aria-label="Feld leeren">C</button>
+    <button type="button" data-ins="1">1</button><button type="button" data-ins="2">2</button><button type="button" data-ins="3">3</button><button type="button" class="op" data-act="left" aria-label="Cursor nach links">◀</button><button type="button" class="op" data-act="right" aria-label="Cursor nach rechts">▶</button>
+    <button type="button" data-ins="0" style="grid-column:span 2">0</button><button type="button" class="go" data-act="ok" style="grid-column:span 3">✓ fertig</button>
+  </div>
+</div>
+
+<script>
+/* ================= Hilfsfunktionen ================= */
+let RNG=Math.random;
+const rnd=(a,b)=>a+Math.floor(RNG()*(b-a+1));
+const pick=a=>a[rnd(0,a.length-1)];
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=rnd(0,i);[a[i],a[j]]=[a[j],a[i]];}return a;}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};}
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const gcd=(a,b)=>{while(b)[a,b]=[b,a%b];return a;};
+const lcm=(a,b)=>a/gcd(a,b)*b;
+function isPrime(n){if(n<2)return false;for(let d=2;d*d<=n;d++)if(n%d===0)return false;return true;}
+function primeFactors(n){const f=[];for(let d=2;n>1;){if(n%d===0){f.push(d);n/=d;}else d++;}return f;}
+const cnt=a=>{const m={};a.forEach(x=>m[x]=(m[x]||0)+1);return m;};
+const fromCnt=m=>Object.keys(m).map(Number).sort((a,b)=>a-b).flatMap(p=>Array(m[p]).fill(p));
+const prod=a=>a.reduce((x,y)=>x*y,1);
+const facH=a=>a.length?a.join(' · '):'1';
+const eqF=(a,v)=>a.length>1?facH(a)+' = '+v:String(v);
+const sameMulti=(a,b)=>a.length===b.length&&[...a].sort((x,y)=>x-y).every((x,i)=>x===[...b].sort((x,y)=>x-y)[i]);
+function commonF(lists){const c=cnt(lists[0]);lists.slice(1).forEach(l=>{const m=cnt(l);for(const k in c)c[k]=Math.min(c[k],m[k]||0);});return fromCnt(c);}
+function maxF(lists){const c={};lists.forEach(l=>{const m=cnt(l);for(const k in m)c[k]=Math.max(c[k]||0,m[k]);});return fromCnt(c);}
+const readInt=s=>{const t=String(s).replace(/[\s\u202F.]/g,'');return /^\d+$/.test(t)?parseInt(t,10):null;};
+/* Primfaktoren lesen: 2·2·3, 2*2*3, 2^2·3, 2²·3 */
+function readFactors(str){
+  let s=String(str).replace(/²/g,'^2').replace(/³/g,'^3').replace(/⁴/g,'^4').replace(/[·×•x]/g,'*').trim();
+  if(!s)return {empty:true};
+  s=s.replace(/\s+/g,'*');
+  const parts=s.split('*').filter(Boolean),out=[];
+  for(const p of parts){const m=p.match(/^(\d+)(?:\^(\d+))?$/);if(!m)return {err:'Schreib die Faktoren mit Malpunkt, z. B. 2 · 2 · 3 oder 2^2 · 3.'};
+    const b=+m[1],e=m[2]?+m[2]:1;if(e<1)return {err:'Verwende Hochzahlen ab 1.'};for(let i=0;i<e;i++)out.push(b);}
+  if(!out.length)return {err:'Schreib die Faktoren mit Malpunkt, z. B. 2 · 2 · 3.'};
+  return {f:out};
+}
+
+/* ================= Beispiele ================= */
+const N_EX=8,DONE=5;
+/* Schritte: 0 ggT oder kgV? (nur Textaufgaben) · 1 zerlegen · 2 gemeinsame Faktoren markieren · 3 ggT · 4 kgV · 5 fertig */
+function coprimeSet(k,lo,hi){let xs;do{xs=Array.from({length:k},()=>rnd(lo,hi));}while(new Set(xs).size<k||xs.reduce(gcd)!==1);return xs;}
+function genPair(){for(;;){const g=rnd(2,12),[p,q]=coprimeSet(2,1,9);const a=g*p,b=g*q;if(a>150||b>150||a<6||b<6)continue;return [a,b];}}
+function genTriple(){for(;;){const g=rnd(2,6),[p,q,r]=coprimeSet(3,1,7);const n=[g*p,g*q,g*r];if(Math.max(...n)>90||Math.min(...n)<4)continue;if(n.reduce(lcm)>1000)continue;return n;}}
+const TEXT_GGT=[
+  (a,b)=>({text:'Zwei Geschenkbänder sind '+a+' cm und '+b+' cm lang. Beide sollen ohne Rest in <b>möglichst lange, gleich lange</b> Stücke geschnitten werden. Wie lang wird ein Stück?',
+    ans:r=>'Ein Stück wird '+r+' cm lang.'}),
+  (a,b)=>({text:'Für ein Fest gibt es '+a+' Äpfel und '+b+' Birnen. Sie sollen so auf Körbe verteilt werden, dass in jedem Korb gleich viele Äpfel und gleich viele Birnen liegen und nichts übrig bleibt. Wie viele Körbe können es <b>höchstens</b> sein?',
+    ans:r=>'Es können höchstens '+r+' Körbe sein.'}),
+  (a,b)=>({text:'Ein rechteckiger Platz ist '+a+' m lang und '+b+' m breit. Er soll mit <b>möglichst großen</b> quadratischen Platten ausgelegt werden, ohne dass man eine Platte zerschneiden muss. Wie lang ist eine Seite einer Platte?',
+    ans:r=>'Eine Platte ist '+r+' m lang und '+r+' m breit.'})
+];
+const TEXT_KGV=[
+  (a,b)=>({text:'Ein Bus fährt alle '+a+' Minuten von der Haltestelle ab, ein anderer alle '+b+' Minuten. Um 8:00 Uhr fahren beide gleichzeitig ab. Nach wie vielen Minuten fahren sie zum <b>ersten Mal wieder gleichzeitig</b> ab?',
+    ans:r=>'Nach '+r+' Minuten fahren beide wieder gleichzeitig ab.'}),
+  (a,b)=>({text:'Ein Leuchtturm blinkt alle '+a+' Sekunden, ein zweiter alle '+b+' Sekunden. Gerade blinken beide gleichzeitig. Nach wie vielen Sekunden blinken sie das <b>nächste Mal gleichzeitig</b>?',
+    ans:r=>'Nach '+r+' Sekunden blinken beide wieder gleichzeitig.'}),
+  (a,b)=>({text:'Lena läuft eine Runde in '+a+' Sekunden, Tim braucht '+b+' Sekunden. Sie starten gleichzeitig am Start. Nach wie vielen Sekunden sind sie zum <b>ersten Mal wieder gemeinsam</b> am Start?',
+    ans:r=>'Nach '+r+' Sekunden sind beide wieder gemeinsam am Start.'})
+];
+function genTextGgt(){for(;;){const g=rnd(3,12),[p,q]=coprimeSet(2,2,7);const a=g*p,b=g*q;if(a>96||b>96)continue;return {want:'ggt',nums:[a,b],...pick(TEXT_GGT)(a,b)};}}
+function genTextKgv(){for(;;){const g=rnd(2,6),[p,q]=coprimeSet(2,2,6);const a=g*p,b=g*q;if(lcm(a,b)>120||a<4||b<4)continue;return {want:'kgv',nums:[a,b],...pick(TEXT_KGV)(a,b)};}}
+function mixSeed(seed,round){return (Math.imul(seed^0x9E3779B9,0x85EBCA6B)^Math.imul(round,0x27D4EB2F))>>>0;}
+function genRound(seed,round){
+  const old=RNG;RNG=mulberry32(mixSeed(seed,round));
+  try{
+    const list=[],seen=new Set();
+    const add=x=>{const k=x.nums.join(',');if(seen.has(k))return false;seen.add(k);list.push(x);return true;};
+    for(let i=0;i<4;i++){let ok=false;while(!ok)ok=add({kind:'num',want:'both',nums:genPair()});}
+    for(let i=0;i<2;i++){let ok=false;while(!ok)ok=add({kind:'num',want:'both',nums:genTriple()});}
+    const texts=[Object.assign({kind:'text'},genTextGgt()),Object.assign({kind:'text'},genTextKgv())];
+    if(RNG()<.5)texts.reverse();texts.forEach(t=>list.push(t));
+    return list;
+  }finally{RNG=old;}
+}
+function newEx(d){
+  d.facs=d.nums.map(primeFactors);d.common=commonF(d.facs);d.ggt=prod(d.common);d.kgvF=maxF(d.facs);d.kgv=prod(d.kgvF);
+  const n=d.nums.length;
+  return {d,step:d.kind==='text'?0:1,err:0,shown:false,msg:{},tries:[0,0,0,0,0],choice:null,
+    lad:d.nums.map(c=>({done:[],c,pv:'',qv:'',hint:'',mark:null,tries:0})),marks:d.facs.map(f=>f.map(()=>false)),
+    ggtVal:'',ggtMark:null,kgvF:'',kgvV:'',kgvMark:null,kmarks:d.facs.map(f=>f.map(()=>false))};
+}
+function applies(e,s){const d=e.d;if(s===0)return d.kind==='text';if(s===2||s===3)return d.want!=='kgv';if(s===4)return d.want!=='ggt';return true;}
+function nextStep(e,s){let n=s+1;while(n<DONE&&!applies(e,n))n++;return n;}
+const nums=d=>d.nums.join(', ');
+
+/* ================= Zustand ================= */
+const G={seed:Math.floor(Math.random()*65536),round:1,cur:0,ex:[]};
+let PUPIL='',restoring=false,summaryRequested=false;
+function makeRound(){G.ex=genRound(G.seed,G.round).map(newEx);G.cur=0;}
+const curEx=()=>G.ex[G.cur];
+
+/* ================= Prüfen ================= */
+function fail(e,s,text){e.err++;e.tries[s]++;e.msg[s]={kind:'bad',text:text+(e.tries[s]===1?' Versuch es nochmal!':''),offer:e.tries[s]>=2};}
+function hint(e,s,text){e.msg[s]={kind:'bad',text,offer:e.tries[s]>=2};}
+function advance(e,s,text){e.step=nextStep(e,s);e.msg[s]={kind:'ok',text};}
+
+function check0(e,c){
+  e.choice=c;const d=e.d;
+  if(c===d.want){advance(e,0,d.want==='ggt'?'Richtig! Es wird aufgeteilt – das Ergebnis teilt beide Zahlen. Du brauchst den ggT.':'Richtig! Etwas passiert wieder gleichzeitig – das Ergebnis ist ein Vielfaches beider Zahlen. Du brauchst das kgV.');return;}
+  fail(e,0,d.want==='ggt'?'Hier wird etwas in gleiche Teile aufgeteilt. Das Ergebnis ist kleiner als die Zahlen und teilt beide → ggT.'
+    :'Hier wird gefragt, wann etwas wieder gleichzeitig passiert. Das Ergebnis ist größer als die Zahlen → kgV.');
+}
+/* Teilerleiter: Zeile für Zeile durch eine Primzahl teilen */
+const digitSum=n=>String(n).split('').reduce((a,b)=>a+ +b,0);
+function divTip(c){
+  if(c%2===0)return 'Tipp: '+c+' ist gerade – also durch 2 teilbar.';
+  if(digitSum(c)%3===0)return 'Tipp: Die Ziffernsumme von '+c+' ist '+digitSum(c)+' – also ist '+c+' durch 3 teilbar.';
+  if(c%10===5)return 'Tipp: '+c+' endet auf 5 – also durch 5 teilbar.';
+  return 'Tipp: Probiere 7, 11, 13 …';
+}
+const ladDone=L=>L.c===1;
+function rowFail(e,L,text){e.err++;L.tries++;L.hint=text;L.mark='bad';}
+function rowRight(e,k){const L=e.lad[k],p=readInt(L.pv),q=readInt(L.qv);return !ladDone(L)&&p!==null&&q!==null&&isPrime(p)&&L.c%p===0&&q===L.c/p;}
+/* Fehler direkt in der Seite anzeigen, ohne neu aufzubauen (Eingabe bleibt aktiv) */
+function showRowError(e,k){
+  const L=e.lad[k],pi=document.querySelector('#exCard [data-lp="'+k+'"]');if(!pi)return;
+  const box=pi.closest('.ladbox');
+  box.querySelectorAll('input').forEach(i=>{i.classList.toggle('bad',L.mark==='bad');});
+  const rm=box.querySelector('.rowmsg');if(rm)rm.textContent=L.hint;
+  const sb=box.querySelector('.lsolbox');
+  if(sb&&L.tries>=2&&!sb.querySelector('[data-act=lsol]'))sb.innerHTML='<button type="button" class="mini" data-act="lsol" data-k="'+k+'">Lösung zeigen</button>';
+}
+function checkRow(e,k){
+  const L=e.lad[k],c=L.c,p=readInt(L.pv),q=readInt(L.qv);
+  if(ladDone(L))return;
+  if(p===null||q===null){L.hint='Trag die Primzahl und das Ergebnis der Division ein.';L.mark='bad';return;}
+  if(p===1){rowFail(e,L,'Durch 1 zu teilen bringt nichts – nimm eine Primzahl wie 2, 3, 5 oder 7.');return;}
+  if(!isPrime(p)){rowFail(e,L,p+' ist keine Primzahl – teile nur durch Primzahlen (2, 3, 5, 7, 11 …).');return;}
+  if(c%p!==0){rowFail(e,L,c+' ist nicht durch '+p+' teilbar. '+divTip(c));return;}
+  if(q!==c/p){rowFail(e,L,'Rechne nochmal: '+c+' : '+p+' = ?');return;}
+  L.done.push([c,p]);L.c=q;L.pv='';L.qv='';L.hint='';L.mark=null;L.tries=0;
+  if(e.lad.every(ladDone))advance(e,1,'Richtig zerlegt! Bei jeder Zahl steht unten die 1.');
+}
+function rowSolve(e,k){
+  const L=e.lad[k];if(ladDone(L))return;
+  const p=primeFactors(L.c)[0];L.done.push([L.c,p]);L.c=L.c/p;L.pv='';L.qv='';L.hint='';L.mark=null;L.tries=0;e.shown=true;
+  if(e.lad.every(ladDone))advance(e,1,'Alle Zahlen sind zerlegt.');
+}
+const ladFacs=L=>L.done.map(r=>r[1]).concat(L.c>1?[L.c]:[]).sort((a,b)=>a-b);
+function check2(e){
+  const d=e.d,gc=cnt(d.common),marked=d.facs.map((f,t)=>f.filter((x,k)=>e.marks[t][k]));
+  if(marked.every(m=>!m.length)){hint(e,2,'Tippe die Primfaktoren an, die in allen Zahlen vorkommen.');return;}
+  for(let t=0;t<marked.length;t++){const mc=cnt(marked[t]);
+    for(const p in mc)if(mc[p]>(gc[p]||0)){
+      const inAll=d.facs.every(f=>f.includes(+p));
+      fail(e,2,inAll?'Bei '+d.nums[t]+' hast du die '+p+' zu oft markiert – markiere sie nur so oft, wie sie in jeder Zahl vorkommt.':'Die '+p+' kommt nicht in allen Zahlen vor.');return;}}
+  for(let t=0;t<marked.length;t++){const mc=cnt(marked[t]);
+    if(Object.keys(gc).some(p=>(mc[p]||0)<gc[p])){
+      fail(e,2,marked[t].length===0?'Markiere die gemeinsamen Faktoren in jeder Zahl – auch bei '+d.nums[t]+'.':'Es gibt noch gemeinsame Faktoren – schau dir '+d.nums[t]+' nochmal an.');return;}}
+  advance(e,2,'Richtig! Das sind alle gemeinsamen Primfaktoren.');
+}
+function check3(e){
+  const d=e.d,v=readInt(e.ggtVal);
+  if(v===null){hint(e,3,'Schreib den ggT als Zahl.');return;}
+  if(v===d.ggt){e.ggtMark='ok';advance(e,3,'Richtig! ggT('+nums(d)+') = '+d.ggt+'.');return;}
+  e.ggtMark='bad';
+  if(v===d.kgv)fail(e,3,'Das ist das kgV. Für den ggT multiplizierst du nur die gelb markierten, gemeinsamen Faktoren.');
+  else fail(e,3,'Multipliziere die markierten Faktoren: '+facH(d.common)+'.');
+}
+function check4(e){
+  const d=e.d,r=readFactors(e.kgvF),v=readInt(e.kgvV);
+  if(r.empty||!String(e.kgvV).trim()){hint(e,4,'Fülle beide Felder aus: Primfaktoren und das kgV als Zahl.');return;}
+  if(r.err){hint(e,4,r.err);return;}
+  const f=r.f;
+  if(f.some(x=>!isPrime(x))){hint(e,4,'Schreib das kgV als Produkt von Primzahlen.');return;}
+  if(!sameMulti(f,d.kgvF)){
+    e.kgvMark='bad';
+    const all=d.facs.flat(),fc=cnt(f),kc=cnt(d.kgvF);
+    if(sameMulti(f,all))fail(e,4,'Gemeinsame Faktoren nimmst du nur einmal: Nimm jeden Primfaktor so oft, wie er in einer Zahl höchstens vorkommt.');
+    else if(sameMulti(f,d.common))fail(e,4,'Das sind die Faktoren vom ggT. Für das kgV brauchst du jeden Primfaktor, der irgendwo vorkommt.');
+    else{const miss=Object.keys(kc).find(p=>!fc[p]),less=Object.keys(kc).find(p=>fc[p]&&fc[p]<kc[p]),more=Object.keys(fc).find(p=>fc[p]>(kc[p]||0));
+      if(miss)fail(e,4,'Es fehlt die '+miss+': Jede Primzahl, die in einer der Zahlen vorkommt, gehört auch ins kgV.');
+      else if(less){const who=d.nums[d.facs.findIndex(x=>cnt(x)[less]===kc[less])];fail(e,4,'Die '+less+' kommt bei '+who+' '+kc[less]+'-mal vor – im kgV muss sie also auch '+kc[less]+'-mal stehen.');}
+      else if(more)fail(e,4,'Die '+more+' kommt in keiner Zahl so oft vor. Nimm sie nur so oft, wie sie höchstens vorkommt.');
+      else fail(e,4,'Nimm jeden Primfaktor so oft, wie er in einer der Zahlen höchstens vorkommt.');}
+    return;
+  }
+  if(v!==d.kgv){e.kgvMark='bad';fail(e,4,'Die Primfaktoren stimmen – multipliziere sie nochmal: '+facH(d.kgvF)+'.');return;}
+  e.kgvMark='ok';advance(e,4,'Richtig! kgV('+nums(d)+') = '+d.kgv+'.');
+}
+function showSolution(e,s){
+  const d=e.d;
+  if(s===0)e.choice=d.want;
+  if(s===1){e.lad=d.nums.map(n=>{const L={done:[],c:n,pv:'',qv:'',hint:'',mark:null,tries:0};while(!ladDone(L)){const p=primeFactors(L.c)[0];L.done.push([L.c,p]);L.c/=p;}return L;});}
+  if(s===2){e.marks=d.facs.map(f=>{const need=cnt(d.common);return f.map(p=>{if(need[p]>0){need[p]--;return true;}return false;});});}
+  if(s===3){e.ggtVal=String(d.ggt);e.ggtMark='ok';}
+  if(s===4){const kc=cnt(d.kgvF);e.kmarks=d.facs.map(f=>f.map(()=>false));Object.keys(kc).forEach(p=>{const t=d.facs.findIndex(f=>cnt(f)[p]===kc[p]);d.facs[t].forEach((x,k)=>{if(x===+p)e.kmarks[t][k]=true;});});
+    e.kgvF=d.kgvF.join('·');e.kgvV=String(d.kgv);e.kgvMark='ok';}
+  e.shown=true;e.msg[s]={kind:'shown',text:'Die Lösung ist jetzt eingetragen – schau sie dir genau an.'};
+  e.step=nextStep(e,s);
+}
+
+/* ================= Anzeige ================= */
+function msgHTML(e,s){const m=e.msg[s];if(!m)return '';
+  return '<p class="msg '+m.kind+'">'+esc(m.text)+(m.offer&&e.step===s?' <button type="button" class="mini" data-act="show'+s+'">Lösung zeigen</button>':'')+'</p>';}
+function inp(attr,val,cls,label,ph){return '<input class="pin'+(cls?' '+cls:'')+'" '+attr+' value="'+esc(val)+'" inputmode="decimal" autocomplete="off" aria-label="'+label+'"'+(ph?' placeholder="'+ph+'"':'')+'>';}
+function exStatus(e){return e.step===DONE?(e.shown?'done shown':'done'):(e.step>(e.d.kind==='text'?0:1)||e.choice||e.lad.some(L=>L.done.length)?'started':'');}
+function stepNo(e,s){let n=0;for(let k=0;k<=s;k++)if(applies(e,k))n++;return n;}
+function card(e,s,title,body,doneTxt){
+  if(!applies(e,s)||e.step<s)return '';
+  return '<div class="stepcard '+(e.step===s?'active':'done')+'"><h3>'+stepNo(e,s)+'. '+title+'</h3>'+(e.step===s?body:'<p class="donetxt">✓ '+doneTxt+'</p>')+msgHTML(e,s)+'</div>';
+}
+const marked=(e,t,k)=>e.step>2&&e.d.want!=='kgv'&&e.marks[t][k];
+
+function renderEx(focus){
+  const e=curEx(),d=e.d,cur=G.cur,allDone=G.ex.every(x=>x.step===DONE);
+  let h='<div class="nav"><button type="button" class="ghost" data-act="prev" aria-label="Vorheriges Beispiel"'+(cur===0?' disabled':'')+'>◀</button>'+
+    '<div class="dots" role="group" aria-label="Beispiele">'+G.ex.map((x,k)=>'<button type="button" class="dot '+exStatus(x)+(k===cur?' cur':'')+'" data-go="'+k+'" aria-label="Beispiel '+(k+1)+'"'+(k===cur?' aria-current="true"':'')+'>'+(k+1)+(x.d.kind==='text'?' 📝':'')+'</button>').join('')+'</div>'+
+    '<button type="button" class="ghost" data-act="next" aria-label="Nächstes Beispiel"'+(cur===N_EX-1?' disabled':'')+'>▶</button>'+
+    '<span class="round">Runde '+G.round+'</span><button type="button" class="mini" data-act="newround">Neue Runde</button></div>';
+  h+='<div class="head"><span class="num">'+(cur+1)+'</span><h2>'+(d.kind==='text'?'Textaufgabe':'Bestimme ggT und kgV von '+nums(d))+'</h2></div>';
+  if(d.kind==='text')h+='<p class="tasktext">'+d.text+'</p>';
+
+  /* 0: ggT oder kgV? */
+  h+=card(e,0,'Brauchst du den ggT oder das kgV?',
+    '<p>Überlege: Wird etwas <b>aufgeteilt</b> (Ergebnis kleiner) oder passiert etwas <b>wieder gleichzeitig</b> (Ergebnis größer)?</p><div class="opts">'+
+    '<button type="button" class="opt" data-act="c0" data-v="ggt"><b>ggT</b> – größter gemeinsamer Teiler</button><button type="button" class="opt" data-act="c0" data-v="kgv"><b>kgV</b> – kleinstes gemeinsames Vielfaches</button></div>',
+    d.want==='ggt'?'Du brauchst den ggT von '+nums(d)+'.':'Du brauchst das kgV von '+nums(d)+'.');
+  /* 1: zerlegen */
+  let b1='<p>Schreib <b>rechts</b> die Primzahl, durch die du teilst – am besten die kleinste, die passt (2, 3, 5, 7, 11 …). Schreib <b>links darunter</b> das Ergebnis. Mach weiter, bis links <b>1</b> steht. Stimmt eine Zeile, geht es automatisch weiter.</p>'+
+    '<p class="hint">Teilbarkeit: durch 2, wenn die Zahl gerade ist · durch 3, wenn die Ziffernsumme durch 3 teilbar ist · durch 5, wenn sie auf 0 oder 5 endet.</p><div class="ladwrap">';
+  e.lad.forEach((L,k)=>{
+    const fin=ladDone(L);
+    b1+='<div class="ladbox"><table class="ladin"><tbody>';
+    L.done.forEach(([c,p])=>{b1+='<tr><td>'+c+'</td><td>'+p+'</td></tr>';});
+    if(!fin){
+      const cls='small'+(L.mark?' '+L.mark:'');
+      b1+='<tr><td>'+L.c+'</td><td>'+inp('data-lp="'+k+'"',L.pv,cls,'Primzahl, durch die du '+L.c+' teilst','?')+'</td></tr>'+
+          '<tr><td>'+inp('data-lq="'+k+'"',L.qv,cls,'Ergebnis von '+L.c+' geteilt durch die Primzahl','?')+'</td><td></td></tr>';
+    }else b1+='<tr><td>'+L.c+'</td><td></td></tr>';
+    b1+='</tbody></table>';
+    if(!fin)b1+='<div class="actions lsolbox">'+(L.tries>=2?'<button type="button" class="mini" data-act="lsol" data-k="'+k+'">Lösung zeigen</button>':'')+'</div><p class="rowmsg">'+esc(L.hint)+'</p>';
+    else b1+='<p class="donetxt">'+d.nums[k]+' = '+facH(ladFacs(L))+' ✓</p>';
+    b1+='</div>';
+  });
+  b1+='</div>';
+  h+=card(e,1,'Zerlege Schritt für Schritt in Primfaktoren',b1,'Alle Zahlen sind zerlegt.');
+  /* 2: markieren */
+  let b2='<p>Tippe in <b>jeder</b> Zahl die Primfaktoren an, die in <b>allen</b> Zahlen vorkommen. Nochmal antippen hebt die Markierung auf.</p>';
+  d.facs.forEach((f,t)=>{b2+='<div class="row"><span class="n0">'+d.nums[t]+'</span> = '+f.map((p,k)=>'<button type="button" class="chip'+(e.marks[t][k]?' mk':'')+'" data-ti="'+t+'" data-fk="'+k+'" aria-pressed="'+e.marks[t][k]+'" aria-label="Faktor '+p+' von '+d.nums[t]+'">'+p+'</button>').join('<span class="sep">·</span>')+'</div>';});
+  b2+='<div class="actions"><button type="button" data-act="check2">Markierung prüfen</button></div>';
+  h+=card(e,2,'Markiere die gemeinsamen Primfaktoren',b2,'Gemeinsam sind: '+facH(d.common));
+  /* 3: ggT */
+  h+=card(e,3,'Berechne den ggT',
+    '<p>Multipliziere die markierten, gemeinsamen Faktoren.</p><div class="row">ggT('+nums(d)+') = '+facH(d.common)+' = '+inp('data-ggt',e.ggtVal,e.ggtMark||'','ggT')+'</div><div class="actions"><button type="button" data-act="check3">Prüfen</button></div>',
+    'ggT('+nums(d)+') = '+eqF(d.common,d.ggt));
+  /* 4: kgV */
+  let b4='<p>Nimm <b>jeden</b> Primfaktor so oft, wie er in einer der Zahlen <b>höchstens</b> vorkommt. <b>Tippe die Faktoren an</b> – sie kommen dann ins Feld – oder schreib sie selbst hinein. Dann rechne aus.</p>';
+  d.facs.forEach((f,t)=>{b4+='<div class="row"><span class="n0">'+d.nums[t]+'</span> = '+f.map((p,k)=>'<button type="button" class="chip kchip'+(e.kmarks[t][k]?' kg':'')+'" data-kt="'+t+'" data-kk="'+k+'" aria-pressed="'+e.kmarks[t][k]+'" aria-label="Faktor '+p+' von '+d.nums[t]+' fürs kgV">'+p+'</button>').join('<span class="sep">·</span>')+'</div>';});
+  b4+='<div class="row">kgV('+nums(d)+') = '+inp('data-kf',e.kgvF,'wide'+(e.kgvMark?' '+e.kgvMark:''),'Primfaktoren des kgV','z. B. 2·2·3·5')+' = '+inp('data-kv',e.kgvV,e.kgvMark||'','kgV als Zahl')+'</div>';
+  b4+='<div class="actions"><button type="button" data-act="check4">Prüfen</button></div>';
+  h+=card(e,4,'Berechne das kgV',b4,'kgV('+nums(d)+') = '+eqF(d.kgvF,d.kgv));
+
+  if(e.step===DONE){
+    const nextOpen=G.ex.findIndex((x,k)=>k>cur&&x.step<DONE),anyOpen=G.ex.findIndex(x=>x.step<DONE);
+    h+='<div class="donebox"><b>Beispiel '+(cur+1)+' geschafft!</b>'+
+      (nextOpen>=0?'<button type="button" data-act="go" data-to="'+nextOpen+'">Weiter zu Beispiel '+(nextOpen+1)+' ▶</button>'
+      :anyOpen>=0?'<button type="button" data-act="go" data-to="'+anyOpen+'">Noch offen: Beispiel '+(anyOpen+1)+' ▶</button>'
+      :'<button type="button" data-act="sum">Zur Auswertung</button>')+'</div>';
+  }
+  /* Heft */
+  h+='<div class="heft"><p class="hefttitle">Dein Rechenweg</p>';
+  if(d.kind==='text'&&e.step>0)h+='<div class="small">Gesucht: '+(d.want==='ggt'?'ggT':'kgV')+'('+nums(d)+')</div>';
+  /* Teilerleitern untereinander, jeweils mit der Zerlegung direkt darunter */
+  e.lad.forEach((L,t)=>{
+    if(!L.done.length&&!(e.step>1))return;
+    h+='<table class="lad"><tbody>'+L.done.map(([c,p])=>'<tr><td>'+c+'</td><td>'+p+'</td></tr>').join('')+(ladDone(L)?'<tr><td>'+L.c+'</td><td></td></tr>':'<tr><td>'+L.c+'</td><td>…</td></tr>')+'</tbody></table>';
+    if(e.step>1)h+='<div class="facline">'+d.nums[t]+' = '+d.facs[t].map((p,k)=>marked(e,t,k)?'<span class="mk">'+p+'</span>':p).join(' · ')+'</div>';
+  });
+  if(e.step>3&&d.want!=='kgv')h+='<div class="fin">ggT('+nums(d)+') = '+eqF(d.common,d.ggt)+'</div>';
+  if(e.step>=DONE&&d.want!=='ggt')h+='<div class="fin">kgV('+nums(d)+') = '+eqF(d.kgvF,d.kgv)+'</div>';
+  if(e.step>=DONE&&d.kind==='num'&&d.nums.length===2)h+='<div class="small">Kontrolle: ggT · kgV = '+d.ggt+' · '+d.kgv+' = '+d.ggt*d.kgv+' = '+d.nums[0]+' · '+d.nums[1]+' ✓</div>';
+  if(e.step>=DONE&&d.kind==='text')h+='<div class="fin">Antwort: '+d.ans(d.want==='ggt'?d.ggt:d.kgv)+'</div>';
+  if(e.step<=1&&!(d.kind==='text'&&e.step>0)&&!e.lad.some(L=>L.done.length))h+='<div class="small">Hier entsteht dein Rechenweg.</div>';
+  if(e.step>=DONE)h+='<p class="copy">✏️ <b>Schreib diesen Rechenweg ordentlich in dein Heft ab.</b></p>';
+  h+='</div>';
+
+  $('exCard').innerHTML=h;
+  $('score').textContent=G.ex.filter(x=>x.step===DONE).length+' von '+N_EX+' fertig';
+  if(window.padApply)window.padApply();
+  if(focus){
+    let f=null;
+    if(focus==='step'){
+      const firstBad=sel=>[...document.querySelectorAll('#exCard '+sel)].find(i=>i.classList.contains('bad'))||document.querySelector('#exCard '+sel);
+      if(e.step===0)f=document.querySelector('#exCard .opt');
+      else if(e.step===1)f=firstBad('[data-lp]');
+      else if(e.step===2)f=document.querySelector('#exCard .chip');
+      else if(e.step===3)f=document.querySelector('#exCard [data-ggt]');
+      else if(e.step===4)f=document.querySelector('#exCard [data-kf]');
+    }else f=document.querySelector(focus);
+    if(f)f.focus({preventScroll:false});
+  }
+  if(allDone&&!summaryRequested&&!restoring)summaryRequested=true;
+  updateSummary();
+  saveProgress();
+}
+
+/* ================= Auswertung ================= */
+function updateSummary(){
+  const sum=$('summary'),allDone=G.ex.every(e=>e.step===DONE);
+  if(!summaryRequested){sum.hidden=true;return;}
+  let T={done:0,first:0,shown:0,open:0,err:0},rows='';
+  G.ex.forEach((e,k)=>{const d=e.d;let st;
+    if(e.step<DONE){st='offen';T.open++;}
+    else{T.done++;if(e.shown){st='Lösung angesehen';T.shown++;}else if(!e.err){st='✓ beim 1. Versuch';T.first++;}else st='✓ richtig';}
+    T.err+=e.err;
+    const res=e.step<DONE?'–':d.kind==='text'?(d.want==='ggt'?'ggT':'kgV')+'('+nums(d)+') = '+(d.want==='ggt'?d.ggt:d.kgv):'ggT = '+d.ggt+', kgV = '+d.kgv;
+    rows+='<tr><td>'+(k+1)+') '+(d.kind==='text'?'Textaufgabe: ':'')+nums(d)+'</td><td>'+res+'</td><td>'+st+'</td><td class="c">'+e.err+'</td></tr>';});
+  $('sumBody').innerHTML=rows;
+  $('sumFoot').innerHTML='<tr><td>Gesamt: '+T.done+' von '+N_EX+' fertig</td><td></td><td>'+T.first+' beim 1. Versuch, '+T.shown+' mit Lösung</td><td class="c">'+T.err+'</td></tr>';
+  const ok=T.done-T.shown;let msg;
+  if(T.first===N_EX)msg='Perfekt! Alle Beispiele beim ersten Versuch richtig.';
+  else if(ok===N_EX)msg='Super, alle Beispiele selbst gelöst!';
+  else if(ok/N_EX>=.75)msg='Sehr gut gemacht!';
+  else if(ok/N_EX>=.5)msg='Gut! Mit ein bisschen Übung klappt der Rest auch.';
+  else msg='Übe noch ein bisschen weiter – starte eine neue Runde und probier es nochmal.';
+  if(!allDone)msg='Noch nicht alles erledigt: '+T.open+' Beispiel'+(T.open===1?' ist':'e sind')+' noch offen. '+msg;
+  $('sumTitle').textContent=(allDone?'Geschafft'+(PUPIL?', '+PUPIL:'')+'! Deine Auswertung':'Zwischenstand'+(PUPIL?' von '+PUPIL:''))+' (Runde '+G.round+')';
+  const now=new Date(),who=$('sumWho');
+  who.innerHTML='👤 <b></b> · '+now.toLocaleDateString('de-AT')+', '+now.toLocaleTimeString('de-AT',{hour:'2-digit',minute:'2-digit'})+' Uhr';
+  who.querySelector('b').textContent=PUPIL||'(kein Name)';
+  $('sumMsg').textContent=msg;
+  const wasHidden=sum.hidden;sum.hidden=false;
+  if(wasHidden&&!restoring&&allDone)setTimeout(()=>sum.scrollIntoView({behavior:'smooth',block:'start'}),300);
+}
+
+/* ================= Bedienung ================= */
+function goTo(k){G.cur=Math.max(0,Math.min(N_EX-1,k));renderEx();$('exCard').scrollIntoView({behavior:'smooth',block:'start'});}
+function newRound(){
+  if(G.ex.some(e=>e.step<DONE)&&!confirm('Neue Runde starten? Alle Beispiele bekommen neue Zahlen, offene Beispiele gehen verloren.'))return;
+  G.round=G.round>=100?1:G.round+1;makeRound();summaryRequested=false;renderEx();
+  $('exCard').scrollIntoView({behavior:'smooth',block:'start'});
+}
+const nextLadFocus=e=>{const k=e.lad.findIndex(L=>!ladDone(L));return k>=0?'[data-lp="'+k+'"]':null;};
+const CHECKS=[null,null,check2,check3,check4];
+function runCheck(s){const e=curEx();if(e.step!==s||!CHECKS[s])return;CHECKS[s](e);renderEx(e.step===DONE?null:'step');}
+$('exCard').addEventListener('click',ev=>{
+  const b=ev.target.closest('button');if(!b)return;const e=curEx();
+  if(b.classList.contains('kchip')){if(e.step!==4)return;const t=+b.dataset.kt,k=+b.dataset.kk;e.kmarks[t][k]=!e.kmarks[t][k];
+    const sel=e.d.facs.flatMap((f,ti)=>f.filter((x,ki)=>e.kmarks[ti][ki])).sort((a,b)=>a-b);
+    e.kgvF=sel.join(' · ');e.kgvMark=null;e.msg[4]=null;renderEx('[data-kt="'+t+'"][data-kk="'+k+'"]');return;}
+  if(b.classList.contains('chip')){if(e.step!==2)return;const t=+b.dataset.ti,k=+b.dataset.fk;e.marks[t][k]=!e.marks[t][k];e.msg[2]=null;renderEx('[data-ti="'+t+'"][data-fk="'+k+'"]');return;}
+  if(b.dataset.go!==undefined){goTo(+b.dataset.go);return;}
+  const a=b.dataset.act;
+  if(a==='prev')goTo(G.cur-1);
+  else if(a==='next')goTo(G.cur+1);
+  else if(a==='go')goTo(+b.dataset.to);
+  else if(a==='newround')newRound();
+  else if(a==='sum'){summaryRequested=true;updateSummary();$('summary').scrollIntoView({behavior:'smooth',block:'start'});}
+  else if((a==='lrow'||a==='lsol')&&e.step===1){const k=+b.dataset.k;if(a==='lrow')checkRow(e,k);else rowSolve(e,k);
+    renderEx(e.step===1?(!ladDone(e.lad[k])?'[data-lp="'+k+'"]':nextLadFocus(e)):'step');}
+  else if(a==='c0'&&e.step===0){check0(e,b.dataset.v);renderEx(e.step===0?null:'step');}
+  else if(/^check\d$/.test(a))runCheck(+a.slice(5));
+  else if(/^show\d$/.test(a)){showSolution(e,+a.slice(4));renderEx(e.step===DONE?null:'step');}
+});
+$('exCard').addEventListener('input',ev=>{
+  const t=ev.target,e=curEx();
+  if(t.dataset.lp!==undefined||t.dataset.lq!==undefined){const k=+(t.dataset.lp??t.dataset.lq),L=e.lad[k];if(t.dataset.lp!==undefined)L.pv=t.value;else L.qv=t.value;L.mark=null;L.hint='';
+    clearTimeout(L.tm);
+    if(rowRight(e,k)){checkRow(e,k);renderEx(e.step===1?(!ladDone(e.lad[k])?'[data-lp="'+k+'"]':nextLadFocus(e)):'step');return;}
+    if(L.pv.trim()&&L.qv.trim()){const pv=L.pv,qv=L.qv;
+      L.tm=setTimeout(()=>{if(curEx()!==e||e.step!==1||L.pv!==pv||L.qv!==qv||ladDone(L))return;checkRow(e,k);showRowError(e,k);},1500);}
+    const lb=t.closest('.ladbox');if(lb){lb.querySelectorAll('input').forEach(i=>i.classList.remove('ok','bad'));const rm=lb.querySelector('.rowmsg');if(rm)rm.textContent='';}}
+  else if(t.hasAttribute('data-ggt')){e.ggtVal=t.value;e.ggtMark=null;t.classList.remove('ok','bad');}
+  else if(t.hasAttribute('data-kf')){e.kgvF=t.value;e.kgvMark=null;document.querySelectorAll('#exCard [data-kf],#exCard [data-kv]').forEach(i=>i.classList.remove('ok','bad'));}
+  else if(t.hasAttribute('data-kv')){e.kgvV=t.value;e.kgvMark=null;document.querySelectorAll('#exCard [data-kf],#exCard [data-kv]').forEach(i=>i.classList.remove('ok','bad'));}
+});
+$('exCard').addEventListener('keydown',ev=>{
+  if(ev.key!=='Enter'||ev.target.tagName!=='INPUT')return;
+  ev.preventDefault();const t=ev.target;
+  if(t.dataset.lp!==undefined){const q=t.parentNode.querySelector('[data-lq]');if(q){q.focus();return;}}
+  if(t.dataset.lq!==undefined){const e=curEx(),k=+t.dataset.lq;if(!e.lad[k].pv.trim()){t.parentNode.querySelector('[data-lp]').focus();return;}checkRow(e,k);renderEx(e.step===1?(!ladDone(e.lad[k])?'[data-lp="'+k+'"]':nextLadFocus(e)):'step');return;}
+  const all=[...document.querySelectorAll('#exCard .stepcard.active input')],nx=all.slice(all.indexOf(t)+1).find(i=>!i.value.trim());
+  if(nx){nx.focus();return;}
+  runCheck(curEx().step);
+});
+$('showSum').addEventListener('click',()=>{summaryRequested=true;updateSummary();$('summary').scrollIntoView({behavior:'smooth',block:'start'});});
+$('newRound2').addEventListener('click',newRound);
+
+/* ================= Fortschritt: speichern (gleiches Gerät) & Code (anderes Gerät) ================= */
+const STORE='ggtkgv1:',ALPH='23456789ABCDEFGHJKMNPQRSTUVWXYZ',AL=BigInt(ALPH.length),B=x=>BigInt(x);
+const normName=s=>s.trim().replace(/\s+/g,' ').toLowerCase();
+function nameHash(n){let h=2166136261;for(const ch of normName(n)){h^=ch.codePointAt(0);h=Math.imul(h,16777619);}return (h>>>0)%1024;}
+function checkChar(s){let c=0;for(let k=0;k<s.length;k++)c=(c+(k+1)*ALPH.indexOf(s[k]))%ALPH.length;return ALPH[c];}
+function makeCode(){
+  const F=[],f=(v,r)=>F.push([v,r]);
+  f(G.seed,65536);f(G.round-1,100);f(G.cur,N_EX);
+  G.ex.forEach(e=>f(e.step*8+Math.min(e.err,3)*2+(e.shown?1:0),48));
+  f(nameHash(PUPIL),1024);
+  let N=0n;for(let k=F.length-1;k>=0;k--)N=N*B(F[k][1])+B(F[k][0]);
+  let s='';do{s=ALPH[Number(N%AL)]+s;N/=AL;}while(N>0n);
+  s+=checkChar(s);
+  return s.match(/.{1,4}/g).join('-');
+}
+function readCode(str){
+  const bad={err:'Dieser Code ist ungültig. Kontrolliere, ob du ihn richtig abgeschrieben hast.'};
+  const s=str.toUpperCase().replace(/[\s\-–—_.]/g,'');
+  if(s.length<3||[...s].some(ch=>!ALPH.includes(ch)))return bad;
+  const body=s.slice(0,-1);
+  if(checkChar(body)!==s.slice(-1))return {err:'Im Code ist ein Tippfehler. Kontrolliere ihn Zeichen für Zeichen.'};
+  let N=0n;for(const ch of body)N=N*AL+B(ALPH.indexOf(ch));
+  const g=r=>{const v=Number(N%B(r));N/=B(r);return v;};
+  const seed=g(65536),round=g(100)+1,cur=g(N_EX),ex=[];
+  for(let k=0;k<N_EX;k++){const v=g(48);ex.push({step:v>>3,err:(v>>1)&3,shown:!!(v&1)});}
+  const nh=g(1024);
+  if(N!==0n||ex.some(x=>x.step>DONE))return bad;
+  return {seed,round,cur,ex,nh};
+}
+function applyCode(p){
+  G.seed=p.seed;G.round=p.round;makeRound();G.cur=p.cur;
+  p.ex.forEach((s,k)=>{const e=G.ex[k];
+    for(let st=0;st<s.step&&st<DONE;st++){if(!applies(e,st))continue;showSolution(e,st);}
+    e.msg={};e.err=s.err;e.shown=s.shown;e.step=s.step<DONE&&!applies(e,s.step)?nextStep(e,s.step):s.step;});
+}
+function saveProgress(){
+  if(!PUPIL||restoring)return;
+  const code=makeCode();
+  try{localStorage.setItem(STORE+normName(PUPIL),code);}catch(x){}
+  $('codeShow').textContent=code;
+}
+function loadSaved(name){try{return localStorage.getItem(STORE+normName(name));}catch(x){return null;}}
+
+/* ================= Name zu Beginn (danach nicht mehr änderbar) ================= */
+function setLocked(on){document.body.classList.toggle('locked',on);if(on)$('main').setAttribute('inert','');else $('main').removeAttribute('inert');}
+function startErr(msg,el){const err=$('pnameErr');err.textContent=msg;err.hidden=false;el.focus();}
+function startWithName(){
+  const inpEl=$('pname'),v=inpEl.value.trim().replace(/\s+/g,' '),codeInp=$('pcode');
+  if(v.length<2){startErr('Bitte gib deinen Namen ein.',inpEl);return;}
+  let p=null;
+  if(codeInp.value.trim()){
+    p=readCode(codeInp.value);
+    if(p.err){$('codeAsk').open=true;startErr(p.err,codeInp);return;}
+    if(p.nh!==nameHash(v)){startErr('Dieser Code gehört zu einem anderen Namen. Schreib deinen Namen genau so wie auf dem anderen Gerät.',inpEl);return;}
+  }
+  $('pnameErr').hidden=true;PUPIL=v;
+  const saved=loadSaved(v);let msg='';
+  restoring=true;
+  try{
+    if(p){applyCode(p);msg='Dein Fortschritt vom anderen Gerät wurde übernommen.';}
+    else if(saved){const q=readCode(saved);if(!q.err&&q.nh===nameHash(v)){applyCode(q);msg='Willkommen zurück! Du machst dort weiter, wo du auf diesem Gerät aufgehört hast.';}}
+  }finally{restoring=false;}
+  $('pnameShow').textContent=v;$('startMsg').textContent=msg;
+  $('startAsk').hidden=true;$('startDone').hidden=false;
+  setLocked(false);
+  summaryRequested=G.ex.every(e=>e.step===DONE);
+  renderEx();
+}
+$('startBtn').addEventListener('click',startWithName);
+['pname','pcode'].forEach(k=>$(k).addEventListener('keydown',ev=>{if(ev.key==='Enter'){ev.preventDefault();startWithName();}}));
+$('codeBtn').addEventListener('click',ev=>{const box=$('codeBox'),open=box.hidden;saveProgress();box.hidden=!open;ev.currentTarget.setAttribute('aria-expanded',open?'true':'false');});
+$('codeCopy').addEventListener('click',ev=>{const b=ev.currentTarget,txt=$('codeShow').textContent;
+  try{navigator.clipboard.writeText(txt).then(()=>{b.textContent='Kopiert ✓';setTimeout(()=>{b.textContent='Kopieren';},1500);},()=>{});}catch(x){}});
+
+/* ================= Start ================= */
+makeRound();
+renderEx();
+setLocked(true);
+$('pname').focus();
+
+/* ================= Eingabehilfe (Bildschirm-Tastatur) ================= */
+(function(){
+  const pad=$('pad'),sysBtn=$('padSys');
+  const touch=window.matchMedia&&matchMedia('(pointer: coarse)').matches;
+  let padOnly=touch,closed=false,cur=null;
+  try{const s=localStorage.getItem('padOnly');if(s!==null)padOnly=s==='1';}catch(x){}
+  function applyMode(){
+    document.querySelectorAll('#exCard input.pin').forEach(i=>{if(padOnly)i.setAttribute('inputmode','none');else i.setAttribute('inputmode','decimal');});
+    sysBtn.textContent=padOnly?'Handy-Tastatur einblenden':'Handy-Tastatur ausblenden';
+  }
+  window.padApply=applyMode;applyMode();
+  function show(input){cur=input;if(closed)return;pad.hidden=false;document.body.classList.add('padon');
+    const r=input.getBoundingClientRect();if(r.bottom>window.innerHeight-pad.offsetHeight-10)input.scrollIntoView({block:'center',behavior:'smooth'});}
+  function hide(){pad.hidden=true;document.body.classList.remove('padon');}
+  document.addEventListener('focusin',ev=>{const t=ev.target;if(t.tagName==='INPUT'&&t.classList.contains('pin')&&!t.readOnly)show(t);});
+  document.addEventListener('focusout',()=>setTimeout(()=>{const a=document.activeElement;
+    if(!(a&&a.tagName==='INPUT'&&a.classList.contains('pin')))hide();},150));
+  function insert(txt){
+    if(!cur||!cur.isConnected)return;
+    const s=cur.selectionStart??cur.value.length,e=cur.selectionEnd??cur.value.length;
+    cur.setRangeText(txt,s,e,'end');cur.dispatchEvent(new Event('input',{bubbles:true}));
+  }
+  /* nur pointerdown/mousedown abfangen – nie touchstart, sonst gehen die Tasten am Handy nicht */
+  pad.addEventListener('pointerdown',ev=>{if(ev.target.closest('button'))ev.preventDefault();});
+  pad.addEventListener('mousedown',ev=>{if(ev.target.closest('button'))ev.preventDefault();});
+  pad.addEventListener('click',ev=>{
+    const b=ev.target.closest('button');if(!b)return;
+    if(b.id==='padHide'){closed=true;hide();return;}
+    if(b.id==='padSys'){padOnly=!padOnly;try{localStorage.setItem('padOnly',padOnly?'1':'0');}catch(x){}applyMode();
+      if(cur&&cur.isConnected){cur.blur();setTimeout(()=>cur.focus(),60);}return;}
+    if(!cur||!cur.isConnected)return;
+    if(b.dataset.ins!==undefined)insert(b.dataset.ins);
+    else if(b.dataset.act==='clr'){cur.value='';cur.dispatchEvent(new Event('input',{bubbles:true}));}
+    else if(b.dataset.act==='left'){const s=Math.max(0,(cur.selectionStart??cur.value.length)-1);cur.setSelectionRange(s,s);}
+    else if(b.dataset.act==='right'){const s=Math.min(cur.value.length,(cur.selectionEnd??cur.value.length)+1);cur.setSelectionRange(s,s);}
+    else if(b.dataset.act==='del'){
+      const s=cur.selectionStart??cur.value.length,e2=cur.selectionEnd??s;
+      if(s!==e2)cur.setRangeText('',s,e2,'end');else if(s>0)cur.setRangeText('',s-1,s,'end');
+      cur.dispatchEvent(new Event('input',{bubbles:true}));}
+    else if(b.dataset.act==='ok'){cur.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true,cancelable:true}));}
+    if(cur&&cur.isConnected)cur.focus({preventScroll:true});
+  });
+  document.addEventListener('click',ev=>{if(ev.target.closest('[data-go],[data-act="next"],[data-act="prev"],[data-act="newround"],#newRound2'))closed=false;});
+})();
+</script>
+</body>
+</html>
